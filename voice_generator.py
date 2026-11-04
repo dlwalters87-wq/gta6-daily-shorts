@@ -7,8 +7,8 @@ import edge_tts
 
 # GTA 6 Daily — AI Voice Generator v1.0
 
-VOICE = "en-US-GuyNeural"
-RATE = "+8%"
+VOICE = "en-US-AndrewMultilingualNeural"
+RATE = "+3%"
 PITCH = "+0Hz"
 
 OUTPUT = Path("output")
