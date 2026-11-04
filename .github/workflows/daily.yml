@@ -5,10 +5,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 13 * * *"
-      timezone: "America/New_York"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   generate:
@@ -29,9 +28,12 @@ jobs:
       - name: Generate GTA 6 Shorts drafts
         run: python news_generator.py
 
-      - name: Save drafts for review
-        uses: actions/upload-artifact@v4
-        with:
-          name: gta6-daily-drafts
-          path: output/
-          retention-days: 7
+      - name: Save drafts to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/
+          if ! git diff --cached --quiet; then
+            git commit -m "Update GTA 6 daily drafts"
+            git push
+          fi
