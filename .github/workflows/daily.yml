@@ -31,20 +31,68 @@ jobs:
       - name: Generate AI voiceovers
         run: python voice_generator.py
 
-      - name: Save scripts to repository
+      - name: Build audio review website
+        run: |
+          mkdir -p docs/audio
+          cp audio/*.mp3 docs/audio/
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          files = sorted(Path("output").glob("shorts_*.json"))
+          scripts = json.loads(files[-1].read_text()) if files else []
+
+          html = """<!DOCTYPE html>
+          <html lang="en">
+          <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>GTA 6 Daily Audio Review</title>
+          <style>
+          body{background:#10101a;color:white;font-family:Arial;
+          max-width:650px;margin:auto;padding:22px}
+          h1{color:#ff4cb8}
+          .card{background:#202033;padding:18px;margin:18px 0;
+          border-radius:14px}
+          audio{width:100%;margin-top:12px}
+          small{color:#bbb}
+          </style>
+          </head><body>
+          <h1>GTA 6 Daily</h1>
+          <p>AI Voiceover Review</p>
+          """
+
+          for i, script in enumerate(scripts, 1):
+              audio = Path(f"docs/audio/gta6_short_{i}.mp3")
+              if not audio.exists():
+                  continue
+              import html as h
+              title = h.escape(script.get("title", "Untitled"))
+              narration = h.escape(script.get("narration", ""))
+              html += (
+                  f'<div class="card"><h3>Short {i}: {title}</h3>'
+                  f'<audio controls src="audio/gta6_short_{i}.mp3"></audio>'
+                  f'<p>{narration}</p>'
+                  '<small>Draft only — not fact-checked</small></div>'
+              )
+
+          html += "</body></html>"
+          Path("docs/index.html").write_text(html, encoding="utf-8")
+          PY
+
+      - name: Save scripts and review page
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add output/
+          git add output/ docs/
           if ! git diff --cached --quiet; then
-            git commit -m "Update GTA 6 daily drafts"
+            git commit -m "Update GTA 6 audio review page"
             git push
           fi
 
-      - name: Save voiceovers for review
+      - name: Save voiceovers artifact
         uses: actions/upload-artifact@v4
         with:
           name: gta6-daily-voiceovers
           path: audio/
-          if-no-files-found: warn
           retention-days: 7
